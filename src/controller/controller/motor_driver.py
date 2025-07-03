@@ -8,17 +8,17 @@ from Phidget22.Devices.BLDCMotor import *
 
 
 class MotorDriver(Node):
-   def __init__(self, motorright2, motorleft2):
+   def __init__(self, motorright1, motorright2, motorright3, motorleft1, motorleft2, motorleft3):
        super().__init__('motor_driver')
 
 
-       #self.motorleft1 = motorleft1
+       self.motorleft1 = motorleft1
        self.motorleft2 = motorleft2
-       #self.motorleft3 = motorleft3
+       self.motorleft3 = motorleft3
 
-       #self.motorright1 = motorright1
+       self.motorright1 = motorright1
        self.motorright2 = motorright2
-       #self.motorright3 = motorright3
+       self.motorright3 = motorright3
       
        self.twist_subscription = self.create_subscription(
            Twist,
@@ -44,13 +44,13 @@ class MotorDriver(Node):
        right_speed, left_speed = compute_wheel_speeds(linear_velocity, angular_velocity)
 
 
-       #self.motorleft1.setTargetVelocity(left_speed)
+       self.motorleft1.setTargetVelocity(left_speed)
        self.motorleft2.setTargetVelocity(left_speed)
-       #self.motorleft3.setTargetVelocity(left_speed)
+       self.motorleft3.setTargetVelocity(left_speed)
 
-       #self.motorright1.setTargetVelocity(right_speed)
+       self.motorright1.setTargetVelocity(right_speed)
        self.motorright2.setTargetVelocity(right_speed)
-       #self.motorright3.setTargetVelocity(right_speed)
+       self.motorright3.setTargetVelocity(right_speed)
 
 
 
@@ -104,50 +104,42 @@ def close_motor(motorleft1, motorleft2, motorleft3, motorright1, motorright2, mo
 
 
 def main(args=None):
-   rclpy.init(args=args)
-  
-   #motorleft1 = initialize_motor(767272, 0)
-   motorleft2 = initialize_motor(767272, 1)
-   #motorleft3 = initialize_motor(767272, 2)
-   
-   #motorright1 = initialize_motor(767272, 3)
-   motorright2 = initialize_motor(767272, 4)
-   #motorright3 = initialize_motor(767272, 5)
+    rclpy.init(args=args)
+    
+    motorleft1 = initialize_motor(767272, 3)
+    motorleft2 = initialize_motor(767272, 4)
+    motorleft3 = initialize_motor(767272, 5)
+    
+    motorright1 = initialize_motor(767272, 0)
+    motorright2 = initialize_motor(767272, 1)
+    motorright3 = initialize_motor(767272, 2)
+    
+    if motorleft1 is None:
+        return
+    if motorleft2 is None:
+        return
+    if motorleft3 is None:
+        return
+
+    if motorright1 is None:
+        return
+    if motorright2 is None:
+        return
+    if motorright3 is None:
+        return
 
 
-      
-#    if motorleft1 is None:
-#        return
-#    if motorleft2 is None:
-#        return
-#    if motorleft3 is None:
-#        return
+    node = MotorDriver(motorright1, motorright2, motorright3, motorleft1, motorleft2, motorleft3)
+    #node = MotorDriver(motorright2, motorleft2)
+            
+    # Spin the node to keep it running
+    rclpy.spin(node)
 
-#    if motorright1 is None:
-#        return
-#    if motorright2 is None:
-#        return
-#    if motorright3 is None:
-#        return
-
-
-   if motorleft2 is None:
-       return
-
-   if motorright2 is None:
-       return
-
-   #node = MotorDriver(motorright1, motorright2, motorright3, motorleft1, motorleft2, motorleft3)
-   node = MotorDriver(motorright2, motorleft2)
-   
-   # Spin the node to keep it running
-   rclpy.spin(node)
-
-   #close_motor(motorleft1, motorleft2, motorleft3, motorright1, motorright2, motorright3)
-   motorleft2.close()
-   motorright2.close()
-   node.destroy_node()
-   rclpy.shutdown()
+    close_motor(motorleft1, motorleft2, motorleft3, motorright1, motorright2, motorright3)
+    #motorleft2.close()
+    #motorright2.close()
+    node.destroy_node()
+    rclpy.shutdown()
 
 
 if __name__ == "__main__":
