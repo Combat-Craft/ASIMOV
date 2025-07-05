@@ -56,7 +56,7 @@ class MotorDriver(Node):
 
 
 def compute_wheel_speeds(linear_vel, angular_vel):
-   left_speed = -(linear_vel - angular_vel) / 2.0
+   left_speed = -(linear_vel + angular_vel) / 2.0
    right_speed = (linear_vel + angular_vel) / 2.0
    return right_speed, left_speed
 
