@@ -28,9 +28,9 @@ setup(
        'console_scripts': [
            'joystick = controller.joystick:main',
            'motor= controller.motor:main',
-           'motor_driver = controller.motor_driver:main', # This points to the joystick.py file
-          
-      
+           'motor_driver = controller.motor_driver:main',
+           'keyboard_node = controller.keyboard_node:main',
+           'arm_driver = controller.arm_driver:main',
        ],
    },
 )
