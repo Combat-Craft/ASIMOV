@@ -3,147 +3,135 @@ from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from Phidget22.Phidget import *
 from Phidget22.Devices.BLDCMotor import *
-
-
+import sys
 
 
 class MotorDriver(Node):
-   def __init__(self, motorright1, motorright2, motorright3, motorleft1, motorleft2, motorleft3):
-       super().__init__('motor_driver')
+    def __init__(self, motors, timeout_sec=2):
+        super().__init__('motor_driver')
+        self.should_exit = False
+        self.timeout_sec = timeout_sec
+        self.get_logger().info(f"Watchdog timeout = {self.timeout_sec} seconds")
 
+        self.left_motors, self.right_motors = motors
+        self.twist_subscription = self.create_subscription(
+            Twist,
+            '/cmd_vel', 
+            self.twist_callback,
+            10  
+        )
 
-       self.motorleft1 = motorleft1
-       self.motorleft2 = motorleft2
-       self.motorleft3 = motorleft3
+        self.watchdog_timer = self.create_timer(0.1, self.watchdog)
+        self.last_msg_time = self.get_clock().now() + rclpy.duration.Duration(seconds=1.0)
 
-       self.motorright1 = motorright1
-       self.motorright2 = motorright2
-       self.motorright3 = motorright3
-      
-       self.twist_subscription = self.create_subscription(
-           Twist,
-           '/cmd_vel', 
-           self.twist_callback,
-           10  # Queue size
-       )
-      
-  
-   def twist_callback(self, msg: Twist):
+    def watchdog(self):
+        elapsed = (self.get_clock().now() - self.last_msg_time).nanoseconds / 1e9
+        if elapsed > self.timeout_sec:
+            self.get_logger().warn(f"No msg for the past {elapsed:.2f} IM GONNA DIE NOW BAIIII XD")
+            for motor in self.left_motors + self.right_motors:
+                try:
+                    motor.setTargetVelocity(0.0)
+                except:
+                    pass
+            self.should_exit = True
 
-      
-       # Extract linear and angular velocities from the Twist message
-       linear_velocity = msg.linear.x 
-       angular_velocity = msg.angular.z
+            
+    def twist_callback(self, msg: Twist):
 
+        self.last_msg_time = self.get_clock().now()
+        # Extract linear and angular velocities from the Twist message
+        linear_velocity = msg.linear.x 
+        angular_velocity = msg.angular.z
+        # Ensure velocity is a float
+        angular_velocity = float(angular_velocity)
+        linear_velocity = float(linear_velocity)
+        right_speed, left_speed = compute_wheel_speeds(linear_velocity, angular_velocity)
 
-       # Ensure velocity is a float
-       angular_velocity = float(angular_velocity)
-       linear_velocity = float(linear_velocity)
+        if len(self.left_motors) > 0:
+            for motor in self.left_motors:
+                motor.setTargetVelocity(left_speed)
 
-
-       right_speed, left_speed = compute_wheel_speeds(linear_velocity, angular_velocity)
-
-
-       self.motorleft1.setTargetVelocity(left_speed)
-       self.motorleft2.setTargetVelocity(left_speed)
-       self.motorleft3.setTargetVelocity(left_speed)
-
-       self.motorright1.setTargetVelocity(right_speed)
-       self.motorright2.setTargetVelocity(right_speed)
-       self.motorright3.setTargetVelocity(right_speed)
-
-
+        if len(self.right_motors) > 0:
+            for motor in self.right_motors:
+                motor.setTargetVelocity(right_speed)
 
 
 def compute_wheel_speeds(linear_vel, angular_vel):
-    left_speed = -(linear_vel + angular_vel)
-    right_speed = (linear_vel - angular_vel)
+    left_speed = -(linear_vel - angular_vel)
+    right_speed = (linear_vel + angular_vel)
     # Clamp speeds to [-1, 1]
     left_speed = max(min(left_speed, 1), -1)
     right_speed = max(min(right_speed, 1), -1)
     return right_speed, left_speed
 
 
-
-
 def initialize_motor(serialNumber, channel):
-   motor = BLDCMotor()
-  
-   # Placeholder values - adjust as needed
-   try:
-       print("Initializing motor...")
-       motor.setDeviceSerialNumber(serialNumber) 
-       motor.setChannel(0) 
-       motor.setHubPort(channel)
-       motor.openWaitForAttachment(5000)
-       motor.setAcceleration(5.0)
+    motor = BLDCMotor()
+    # Placeholder values - adjust as needed
+    try:
+        print("Initializing motor...")
+        motor.setDeviceSerialNumber(serialNumber) 
+        motor.setChannel(0) 
+        motor.setHubPort(channel)
+        motor.openWaitForAttachment(5000)
+        motor.setAcceleration(5.0)
+        print("Motor attached and initialized.")
+        return motor
 
-       print("Motor attached and initialized.")
-       return motor
+    except PhidgetException as e:
+        print(f"Could not initialize motor: {e.details}")
+        return None
 
-
-   except PhidgetException as e:
-       print(f"Could not initialize motor: {e.details}")
-       return None
-
-
-
-
-def close_motor(motorleft1, motorleft2, motorleft3, motorright1, motorright2, motorright3):
-   try:
-       print("Closing motor...")
-       motorleft1.close()
-       motorleft2.close()
-       motorleft3.close()
-
-       motorright1.close()
-       motorright2.close()
-       motorright3.close()
-       print("Motor closed successfully.")
-   except PhidgetException as e:
-       print(f"[ERROR] Could not close motor: {e.details}")
-
-
+def close_motor(motors):
+    try:
+        print("Closing motor...")
+        motors.close()
+        print("Motor closed successfully.")
+    except PhidgetException as e:
+        print(f"[ERROR] Could not close motor: {e.details}")
 
 
 def main(args=None):
     rclpy.init(args=args)
-    
-    motorleft1 = initialize_motor(767272, 3)
-    motorleft2 = initialize_motor(767272, 4)
-    motorleft3 = initialize_motor(767272, 5)
-    
-    motorright1 = initialize_motor(767272, 0)
-    motorright2 = initialize_motor(767272, 1)
-    motorright3 = initialize_motor(767272, 2)
-    
-    if motorleft1 is None:
-        return
-    if motorleft2 is None:
-        return
-    if motorleft3 is None:
-        return
 
-    if motorright1 is None:
-        return
-    if motorright2 is None:
-        return
-    if motorright3 is None:
-        return
+    left_motors = []
+    right_motors = []
 
+    left_ports = [0, 1]
+    right_ports = [4, 5]
 
-    node = MotorDriver(motorright1, motorright2, motorright3, motorleft1, motorleft2, motorleft3)
-    #node = MotorDriver(motorright2, motorleft2)
-            
-    # Spin the node to keep it running
-    rclpy.spin(node)
+    for port in left_ports:
+        try:
+            motor = initialize_motor(767272, port)
+            if motor is None:
+                print(f"Motor initialization returned None on port {port}")
+                continue
+        except PhidgetException as e:
+            print(f"[ERROR] Could not initialize motor {port}: {e.details}")
+            continue
 
-    close_motor(motorleft1, motorleft2, motorleft3, motorright1, motorright2, motorright3)
-    #motorleft2.close()
-    #motorright2.close()
+        left_motors.append(motor)
+
+    for port in right_ports:
+        try:
+            motor = initialize_motor(767272, port)
+            if motor is None:
+                return
+        except PhidgetException as e:
+            print(f"[ERROR] Could not initialize motor {port}: {e.details}")
+            continue
+
+        right_motors.append(motor)
+
+    motors = [left_motors, right_motors]
+    node = MotorDriver(motors, timeout_sec=2)
+    while rclpy.ok() and not node.should_exit:
+        rclpy.spin_once(node, timeout_sec=2)
+    for motorset in motors:
+        for motor in motorset:
+            close_motor(motor)
     node.destroy_node()
     rclpy.shutdown()
 
-
 if __name__ == "__main__":
-   main()
+    main() 
