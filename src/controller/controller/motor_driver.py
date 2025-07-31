@@ -22,7 +22,7 @@ class MotorDriver(Node):
         )
 
         self.watchdog_timer = self.create_timer(0.1, self.watchdog)
-        self.last_msg_time = self.get_clock().now() + rclpy.duration.Duration(seconds=1.0)
+        self.last_msg_time = self.get_clock().now()
 
     def watchdog(self):
         elapsed = (self.get_clock().now() - self.last_msg_time).nanoseconds / 1e9
@@ -97,12 +97,12 @@ def main(args=None):
     left_motors = []
     right_motors = []
 
-    left_ports = [0, 1]
-    right_ports = [4, 5]
+    left_ports = [3, 4, 5]
+    right_ports = [0, 1, 2]
 
     for port in left_ports:
         try:
-            motor = initialize_motor(767272, port)
+            motor = initialize_motor(766944, port)
             if motor is None:
                 print(f"Motor initialization returned None on port {port}")
                 continue
@@ -114,9 +114,10 @@ def main(args=None):
 
     for port in right_ports:
         try:
-            motor = initialize_motor(767272, port)
+            motor = initialize_motor(766944, port)
             if motor is None:
-                return
+                print(f"Motor initialization returned None on port {port}")
+                continue
         except PhidgetException as e:
             print(f"[ERROR] Could not initialize motor {port}: {e.details}")
             continue
