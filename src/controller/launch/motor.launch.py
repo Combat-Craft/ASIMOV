@@ -9,7 +9,8 @@ def generate_launch_description():
        # Node action to launch motor_driver with parameters
        Node(
            package='controller', 
-           executable='motor_driver', 
+           executable='motor_driver',
+           output='screen',  
            name='motor_driver',
        ),
    ])
