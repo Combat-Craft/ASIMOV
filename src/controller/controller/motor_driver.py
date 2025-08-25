@@ -16,7 +16,7 @@ class MotorDriver(Node):
         self.left_motors, self.right_motors = motors
         self.twist_subscription = self.create_subscription(
             Twist,
-            '/cmd_vel', 
+            '/cmd_vel',
             self.twist_callback,
             10  
         )
@@ -97,8 +97,8 @@ def main(args=None):
     left_motors = []
     right_motors = []
 
-    left_ports = [3, 4, 5]
-    right_ports = [0, 1, 2]
+    left_ports = [3, 1, 5]
+    right_ports = [0, 4, 2]
 
     for port in left_ports:
         try:
@@ -136,3 +136,5 @@ def main(args=None):
 
 if __name__ == "__main__":
     main() 
+
+

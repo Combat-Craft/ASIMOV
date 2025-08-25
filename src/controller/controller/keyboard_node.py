@@ -4,11 +4,11 @@ from std_msgs.msg import String
 from pynput import keyboard
 
 JOINT_KEY_MAP = [
-    ("q", "a")  # Joint 1: Q (inc), A (dec)
-    # ("w", "s"),  # Joint 2: W (inc), S (dec)
-    # ("e", "d"),  # Joint 3: E (inc), D (dec)
-    # ("r", "f"),  # Joint 4: R (inc), F (dec)
-    # ("t", "g"),  # Joint 5: T (inc), G (dec)
+    ("q", "a"),  # Joint 1: Q (inc), A (dec)
+    ("w", "s"),  # Joint 2: W (inc), S (dec)
+    ("e", "d"),  # Joint 3: E (inc), D (dec)
+    ("r", "f"),  # Joint 4: R (inc), F (dec)
+    ("t", "g")  # Joint 5: T (inc), G (dec)
     # ("y", "h"),  # Joint 6: Y (inc), H (dec)
 ]
 

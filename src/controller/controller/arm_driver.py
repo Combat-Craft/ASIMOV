@@ -13,26 +13,13 @@ JOINT_KEY_MAP = [
     ("e", "d"),  # Joint 3: E (inc), D (dec)
     ("r", "f"),  # Joint 4: R (inc), F (dec)
     ("t", "g"),  # Joint 5: T (inc), G (dec)
-    ("y", "h"),  # Joint 6: Y (inc), H (dec)
-]
-
-# Define joint limits as (min, max) in degrees for each joint
-JOINT_LIMITS = [
-    (0, 90),    # Joint 1: 0° to 90°
-    (0, 180),   # Joint 2: 0° to 180°
-    (0, 135),   # Joint 3: 0° to 135°
-    (-45, 45),  # Joint 4: -45° to 45°
-    (0, 120),   # Joint 5: 0° to 120°
-    (-90, 90),  # Joint 6: -90° to 90°
 ]
 
 class JointController:
-    def __init__(self, hub_port, limit_min, limit_max):
+    def __init__(self, hub_port):
         self.motor = Stepper()
         self.motor.setHubPort(hub_port)
         self.position = 0
-        self.limit_min = limit_min
-        self.limit_max = limit_max
 
     def initialize(self):
         self.motor.openWaitForAttachment(5000)
@@ -44,11 +31,9 @@ class JointController:
         self.motor.setTargetPosition(0)
 
     def move(self, delta):
-        new_position = self.position + delta
-        if new_position < self.limit_min or new_position > self.limit_max:
-            return
-        self.position = new_position
+        self.position += delta
         self.motor.setTargetPosition(self.position)
+        print(f"Joint {self.motor.getHubPort()} moved to {self.position}Â°")
 
     def disengage(self):
         self.motor.setEngaged(False)
@@ -58,9 +43,8 @@ class ArmDriverNode(Node):
     def __init__(self):
         super().__init__('arm_driver')
         self.joints = []
-        for i in range(6):
-            limit_min, limit_max = JOINT_LIMITS[i]
-            joint = JointController(i, limit_min, limit_max)
+        for i in range(5):
+            joint = JointController(i)
             joint.initialize()
             self.joints.append(joint)
         self.subscription = self.create_subscription(
